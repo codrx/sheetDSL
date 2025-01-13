@@ -1,0 +1,22 @@
+Function ok [
+		Paste
+		NewSheet
+] End
+
+Do [
+		NewSheet
+		Paste
+		c Copy
+
+		In (Row) [
+				NewSheet
+				Paste
+				c Copy
+
+				In (Source) [
+						NewSheet
+						Paste
+						c Copy
+				] End
+		] End
+] End

@@ -1,0 +1,86 @@
+
+
+###### DSL example
+
+
+Source: 	data.csv	
+Destination:	dataDest.xslx
+
+
+Do:
+		Source:
+				Copy
+
+		End
+
+
+		Destination:
+				NewSheet
+				Paste 
+				
+				FVIFA
+
+				
+				Row C->C:	
+						Double
+				End
+
+				Row D->F:
+						MultBy 3
+
+				End
+
+				Column End:
+						Sum
+
+				End
+
+		End
+
+						
+End
+
+
+
+######
+
+
+###### DSL grammar/sketch
+
+
+Top Level Declarations:
+
+		Source:		--- data | [data]; combine _; separate (allow aliases for files)
+		Destination:	--- .xslx | [.xlsx]; combine _; separate (allow aliases for files)
+
+
+				# Individual sourcing and applications ???
+
+				GetFrom:		--- data
+				ApplyTo: 		--- .xslx
+
+		Reciept:	-- Yes | No
+
+Blocks:
+
+Do -> End
+Function ___ -> End
+
+In [Source] -> End: { ... }				; have to be within Do->End
+In [Destination] -> End: { ... }		; have to be within Do->End
+
+In [Row] -> End: { ... }				-- default empty | Y1 | Y1->Y2 | Start | End | Empty | Heading (String)			
+										; have to be within Source/Destination Blocks
+
+In [Column] -> End: { ... }			-- default empty | X1 | X1->X2 | Start | End | Empty | Heading (String)
+									; have to be within Source/Destination Blocks
+
+
+
+Scoped Functions:
+
+NewSheet:			; creates new sheet
+
+Copy:				--- start | end | middle | range []
+Paste:				--- start | end | middle | range [] 
+
