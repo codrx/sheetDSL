@@ -1,19 +1,24 @@
-Function ok [
+Function done () [
+		Paste
+		NewSheet
+] End
+
+Function ok () [
 		Paste
 		NewSheet
 ] End
 
 Do [
 		NewSheet
-		Paste
-		c Copy
+		Paste (where=End, replace=Yes)
+		c Copy (till=End)
 
-		In (Row) [
+		In Row [
 				NewSheet
 				Paste
 				c Copy
 
-				In (Source) [
+				In Source [
 						NewSheet
 						Paste
 						c Copy

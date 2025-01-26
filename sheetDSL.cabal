@@ -33,6 +33,7 @@ common deps
                         ,   bytestring      >=      0.10.8.0
                         ,   lens            >=      3.8         &&      <       5.4 
                         ,   time            >=      1.4.0.1
+                        ,   filepath
                         ,   text
                         ,   containers
                         ,   mtl

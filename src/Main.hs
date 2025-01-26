@@ -10,6 +10,7 @@ module Main where
 -- import Excel.Styling
 import Data.Text (Text)
 import qualified Data.Text.IO as T (readFile)
+import System.FilePath (isValid, takeExtension)
 import Parser.Parser (parseDXL, fpretty, Gram) 
 
 
