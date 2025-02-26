@@ -1,4 +1,3 @@
-{-# LANGUAGE OverloadedStrings #-}
 
 module Excel.Accounting where
 
@@ -8,10 +7,6 @@ module Excel.Accounting where
 -- import qualified Data.ByteString.Lazy as L
 
 
--- writeExcelFile :: Xlsx -> FilePath -> IO ()
--- writeExcelFile xlsx fp = do
---   ct <- getPOSIXTime
---   L.writeFile fp $ fromXlsx ct xlsx
 
 
 

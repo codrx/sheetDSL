@@ -189,6 +189,9 @@ parseRowCol = (Row <$ string' "Row") <|> (Column <$ string' "Column")
 parseSourceDes :: FParser InArgs
 parseSourceDes = (Source <$ string' "Source") <|> (Destination <$ string' "Destination")
 
+parseSheet :: FParser InArgs
+parseSheet = undefined
+
 parseEmptyScope :: FParser [Gram a]
 parseEmptyScope = lookAhead (char ']') *> return [EmptyScope]
 
@@ -204,7 +207,8 @@ parseXLFunc = do
 
 parseCustomXLFunc :: FParser (Gram a)
 parseCustomXLFunc = do
-  char' 'c' >> space1
+  char' 'c'
+  space1
   f <- many alphaNumChar
   space
   r <- parseFuncArgs
@@ -224,7 +228,7 @@ parseInnerIn :: FParser (Gram a)
 parseInnerIn = do
   string' "In"
   space1
-  a <- (space >> choice [parseRowCol, parseSourceDes]) <* space
+  a <- (space >> choice [parseRowCol, parseSourceDes, parseSheet]) <* space
   f <-
     between (char '[') (char ']') $
       choice
