@@ -47,7 +47,7 @@ library
 
     hs-source-dirs:         src
 
-    exposed-modules:        Parser.Paser
+    exposed-modules:        Parser.Parser
                         ,   Excel.Basics
                         ,   Excel.Accounting
                         ,   Excel.Finance

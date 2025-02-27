@@ -1,0 +1,7 @@
+{
+	{
+		"key": "p w",
+		"command": "-extension.vim_escape",
+		"when": "editorTextFocus && vim.active && !inDebugRepl"
+	}
+}
