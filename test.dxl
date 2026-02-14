@@ -1,0 +1,22 @@
+Function done () [
+		Paste
+] End
+
+Function ok () [
+		Paste
+] End
+
+Do [
+		Paste (where=End, replace=Yes)
+		c Copy (until=End)
+
+		In Row [
+				Paste
+				c Copy
+
+				In Source [
+						Paste
+						c Copy
+				] End
+		] End
+] End

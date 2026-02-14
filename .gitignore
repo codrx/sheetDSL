@@ -1,0 +1,6 @@
+dist-newstyle/
+
+1000
+*.code-workspace
+*.xlsx
+.DS_Store

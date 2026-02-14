@@ -1,0 +1,31 @@
+
+// b-function = builtin function 
+// c-function = custom defined function
+
+BNF -- not exact
+
+<program> ::= <source> <destination> { <function> } <do-block>
+
+<source> ::= "Source" ":" <filepath>
+
+
+<destination> ::= "Destination" ":" <filepath>
+
+<filepath> ::= filepath
+
+<c-function> ::= "Function" <identifier> "(" <arg> ")" <block> "End"
+
+<do-block> ::= "Do" <block> "End"
+
+<block> ::= "[" { <statement> } "]"
+
+<statement> ::= <b-function> "(" <arg> ")"
+              | <c-function> "(" <arg> ")"
+              | <in-block>
+
+<in-block> ::= "In" <identifier> <block> "End"
+
+<arg> ::= <var> "=" <identifer> |<ident> "=" <identifier>  <arg>
+
+
+<identifier> ::= /* identifier */
