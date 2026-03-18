@@ -1,11 +1,10 @@
-
-Source: "Book1.xlsx"
+ReadFrom: "test.csv"
+WriteTo: "Book1.xlsx"
 
 Do [
-    MoveToCell (row=1, column=A)
+    MoveToCell (row="1", column="A")
     Copy
-
     NewSheet (name="B")
-    MoveToCell (row=2, column=A)
+    MoveToCell (row="2", column="A")
     Paste
-]
+] End

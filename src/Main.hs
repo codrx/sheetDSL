@@ -1,28 +1,27 @@
--- {-# LANGUAGE GeneralizedNewtypeDeriving #-}
--- {-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes        #-}
 
+{-# OPTIONS_GHC -Wno-unused-imports #-}
+
 module Main where
 
--- import Excel.Basics
--- import Excel.Finance
--- import Excel.Accounting
--- import Excel.Styling
+import Interpreter.Type
+import Interpreter.Parser
+import Interpreter.Eval
+import Interpreter.Dispatch
 
--- main :: IO ()
--- main = writeExcelFile test "./Book1.xlsx"
+import Excel.Type
+import Excel.Basics
 
--- printParseResult :: FilePath -> IO ()
--- printParseResult fp = do
---     content <- TIO.readFile fp
---     case parseDXL fp content of
---         Left err -> putStrLn $ "Parse error: " ++ show err
---         Right values -> putStrLn . fpretty . show $ (values :: [Gram Text])
---         -- Right values -> print (values :: [Gram Text])
+{-
 
--- main :: IO ()
--- main = printParseResult "test.dxl"
+  TODO Majoris:
+
+    - make readFrom be optional or have None option
+
+-}
 
 main :: IO ()
 main = undefined
