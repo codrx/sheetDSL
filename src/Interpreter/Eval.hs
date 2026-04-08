@@ -27,6 +27,9 @@ data InterpreterState a = StateT ExcelFileState (IO a)
 eval :: Stack -> InterpreterState ()
 eval = undefined
 
+-- (row, index) args will be fed using selection range
+evalWithin = undefined
+
 
 
 

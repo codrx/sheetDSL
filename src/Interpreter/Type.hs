@@ -54,7 +54,8 @@ data DSLGrammar =
 
 -- potential change in language structure to simplify Excel instructions
 -- data BaseOp f =  
---     Set f
+--     Move f
+--   | Set f
 --   | Get f
 --   | Move f
 --   | Apply f

@@ -38,9 +38,8 @@ checkFunc = flip member dispatchTable
 -}
 dispatchTable :: Map Text ExecFunc
 dispatchTable = M.fromList
-  [ ("Copy", ExecFunc copy) 
-  , ("Paste", ExecFunc paste)
-  , ("MoveToCell", ExecFunc moveToCell)
-  , ("NewSheet", ExecFunc newSheet)
+  [ ("NewSheet", ExecFunc newSheet) 
   , ("SetCurrentSheet", ExecFunc setActiveSheet)
+  , ("MoveToCell", ExecFunc moveToCell)
+  , ("InsertValue", ExecFunc insertValue)
   ]

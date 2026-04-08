@@ -21,7 +21,13 @@ import Excel.Basics
 
     - make readFrom be optional or have None option
 
+  Minimal viable product:
+    - insert value into cell
+    - move between cells
+    - set ref
+    - apply a basic function using ref
 -}
+
 
 main :: IO ()
 main = undefined
