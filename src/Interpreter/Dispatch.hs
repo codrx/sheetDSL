@@ -12,7 +12,10 @@ import           Data.Text (Text)
 import           Data.Map
 import qualified Data.Map as M
 
+import           Interpreter.Type
+
 import           Excel.Basics
+import           Excel.Type
 
 {-
   TODO minoris:
@@ -22,7 +25,7 @@ import           Excel.Basics
 -}
 -- import           Data.Proxy (Proxy)
 
-
+-- existential quantifier right?  
 data ExecFunc where
   ExecFunc :: forall f. f -> ExecFunc 
 
@@ -41,5 +44,13 @@ dispatchTable = M.fromList
   [ ("NewSheet", ExecFunc newSheet) 
   , ("SetCurrentSheet", ExecFunc setActiveSheet)
   , ("MoveToCell", ExecFunc moveToCell)
-  , ("InsertValue", ExecFunc insertValue)
+  , ("InsertValue", ExecFunc insertValueW)
   ]
+
+-- move somewhere else
+-- was supposed to change this to something else but forgot what
+insertValueW :: VarValueTy -> NewExcelFileState
+insertValueW (StringTy t) = insertValue t
+insertValueW (IntegerTy t) = insertValue t
+insertValueW (FractionalTy t) = insertValue t
+insertValueW (BooleanTy t) = insertValue t

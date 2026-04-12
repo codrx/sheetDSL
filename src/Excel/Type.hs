@@ -3,6 +3,7 @@
 {-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE DeriveGeneric              #-}
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
+{-# LANGUAGE InstanceSigs #-}
 
 
 module Excel.Type where
@@ -12,17 +13,15 @@ import           Data.Text (Text)
 
 import           Control.Lens
 import           GHC.Generics
+import           GHC.Float (int2Double)
 
 
 import           Codec.Xlsx.Types
-import           Codec.Xlsx.Types.Common
-
 
 
 type SheetName = Text
 type Row = Text
 type Column = Text
-
 
 -- newtype ClipBoard = ClipBoard { getStored :: forall a. a -> a } 
 
@@ -35,14 +34,44 @@ data ExcelFileState = ExcelFileState
 
 makeLenses ''ExcelFileState
 
+instance Default ExcelFileState where
+  def = undefined
+
+
 type NewExcelFileState  = ExcelFileState -> ExcelFileState
 type MNewExcelFileState = ExcelFileState -> Maybe ExcelFileState
+type ENewExcelFileState = ExcelFileState -> Either () ExcelFileState
 
-class GoesInCell a where
-  isCellRef     :: a -> Maybe CellRef
-  isCellValue   :: a -> Maybe CellValue
-  isCellFormula :: a -> Maybe CellFormula
 
-instance GoesInCell Int where
-  isCellValue a = undefined
+-- need to make most of these monads later
+
+-- mimic Worksheet record from xlsx
+-- could use GADTs
+data WSContent = 
+    WSColumn ([ColumnsProperties] -> [ColumnsProperties])
+  | WSCells (CellMap -> CellMap)
+
+
+-- mimic Cell record from xlsx
+data CellContent = 
+    CCStyle   Int
+  | CCValue   CellValue
+  | CCComment Comment
+  | CCFormula CellFormula
+
+
+class ValidCellValue a where
+  toCellValue :: a -> CellContent
+
+instance ValidCellValue Int where
+  toCellValue = CCValue . review _CellDouble . int2Double
+
+instance ValidCellValue Double where
+  toCellValue = CCValue . review _CellDouble
+
+instance ValidCellValue Bool where
+  toCellValue = CCValue . review _CellBool
+
+instance ValidCellValue Text where
+  toCellValue = CCValue . review _CellText
 

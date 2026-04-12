@@ -19,52 +19,87 @@ module Excel.Basics
   ) where
 
 
-import           Data.Text (Text)
-import qualified Data.Text as T
-import           Data.Time.Clock.POSIX
-import qualified Data.ByteString.Lazy as BL
-import           Data.Bifunctor (bimap)
-
 import           Control.Lens
-
-
 import           Codec.Xlsx
-import           Codec.Xlsx.Types
-import           Codec.Xlsx.Types.Common
-
 import           Excel.Type
 
 
 {-
 
-  Majority of functions overwrite existing cell contents
+  Semantics:
+
+    update____ -> any function that modifies ExcelFileState 
+
+      -> used for tracking more than anything else
+
+
+    write_____ -> any function that modifies records defined in Xlsx library
+
+      -> anything that changes records in lsx library will directly effect the file
+
+
+  Majority of functions will overwrite existing cell contents
 
   - may need to wrap accessors in newtype
 
 -}
 
+_getAS :: ExcelFileState -> (SheetName, Worksheet)
+_getAS = flip (^.) activeSheet
+
+_getWS :: ExcelFileState -> Worksheet
+_getWS = snd . _getAS
+
+_getCellPos :: ExcelFileState -> CellCoord
+_getCellPos = flip (^.) cellPos
 
 copy = undefined
-
-_getCellData = undefined
 
 paste = undefined
 
 newSheet :: SheetName -> NewExcelFileState 
 newSheet sheetName = xlsx . atSheet sheetName ?~ def
 
--- improve | looks ugly
 setActiveSheet :: SheetName -> MNewExcelFileState
-setActiveSheet sheetName efs = do 
+setActiveSheet = updateActiveSheet
+
+-- improve | looks ugly
+updateActiveSheet :: SheetName -> MNewExcelFileState
+updateActiveSheet sheetName efs = do 
   newWS <- efs ^? xlsx . ixSheet sheetName
-  let (sn, ws)   = efs ^. activeSheet
+  let (sn, ws)   = _getAS efs
       saveCurrWS = xlsx . ixSheet sn .~ ws
       setNewWS   = activeSheet .~ (sheetName, newWS)
   return $ efs & saveCurrWS & setNewWS
 
-updateCellPos :: CellCoord -> NewExcelFileState
-updateCellPos c efs = efs & cellPos .~ c
+{-
 
+  CellRef "cr"= user friendly position e.g. A1, B2
+
+  CellCoord r c = machine friendly position e.g CellRef B3 <-> CellCoord 3 2
+
+-}
+
+{------------------------------------------------------------
+
+  Moving 
+
+-}
+updateCellPos :: CellCoord -> NewExcelFileState
+updateCellPos c = flip (&) (cellPos .~ c)
+
+-- moveToCell (row = 3, coloumn = B)
+moveToCell :: Row -> Column -> NewExcelFileState
+moveToCell r c efs = 
+  let r' = row2coord r
+      c' = col2coord c 
+    in updateCellPos (r', c') efs
+
+{------------------------------------------------------------
+
+  Modifying wsCell in Worksheet
+
+-}
 
 -- Taken from: Codec.Xlsx.Types.Common
 -- | Unwrap a Coord into an abstract Int coordinate
@@ -78,23 +113,46 @@ unColumnCoord :: ColumnCoord -> ColumnIndex
 unColumnCoord (ColumnAbs i) = i
 unColumnCoord (ColumnRel i) = i
 
-writeCellToWS ::[(CellCoord, Cell)] -> NewExcelFileState
-writeCellToWS [] efs = efs
-writeCellToWS cs efs = undefined
-  -- let coordToIndex = bimap unRowCoord unColumnCoord
-  --   in undefined
-{-# INLINE writeCellToWS #-}
+writeToWS :: WSContent -> NewExcelFileState
+writeToWS (WSCells f) efs = efs & activeSheet . _2 . wsCells %~ f
+-- not hit
+writeToWS _ _ = undefined
 
-moveToCell :: Row -> Column -> NewExcelFileState
-moveToCell r c efs = 
-  let r' = row2coord r
-      c' = col2coord c 
-    in updateCellPos (r', c') efs
+writeCellToWS ::(CellCoord, Cell) -> NewExcelFileState
+writeCellToWS (cc, c) efs = 
+  let coordAsIndex = bimap unRowCoord unColumnCoord cc
+    in writeToWS (WSCells (at coordAsIndex ?~ c)) efs
 
+-- write to Cell record in xlsx
+writeToCell :: CellContent -> Cell -> Cell
+writeToCell (CCStyle cs) = flip (&) (cellStyle ?~ cs)
+writeToCell (CCValue cv) = flip (&) (cellValue ?~ cv)
+writeToCell (CCComment cm) = flip (&) (cellComment ?~ cm)
+writeToCell (CCFormula cf) = flip (&) (cellFormula ?~ cf)
 
+{------------------------------------------------------------
 
-insertValue :: GoesInCell a => a -> MNewExcelFileState
-insertValue = undefined
+  Insertion
+
+-}
+
+insertFormula :: a -> ENewExcelFileState
+insertFormula = undefined
+
+-- not related to xlsx CellRef
+insertCellRef :: a -> ENewExcelFileState
+insertCellRef = undefined
+
+insertCellValue :: ValidCellValue a => a -> NewExcelFileState
+insertCellValue v efs = 
+  let tc = toCellValue v
+      -- using def for Cell for now
+      wc = writeToCell tc def
+      cc = _getCellPos efs
+    in writeCellToWS (cc, wc) efs
+
+insertValue :: ValidCellValue a => a -> NewExcelFileState
+insertValue = insertCellValue
 
 rowApply = undefined
 
@@ -141,4 +199,21 @@ fillCells = undefined
 -- writeExcelFile x f = do
 --   ct <- getPOSIXTime
 --   BL.writeFile f $ fromXlsx ct x
+
+
+
+-- To be moved into separate folder and file
+-- or changed once i understand xlsx lib
+
+
+-- need to add constraint
+
+-- sumFormula :: GoesInCell a => (a, a) -> Formula
+-- sumFormula (b, e)= 
+--   let 
+--     in ExcelFormula $ "=SUM" ++ "(" ++ b ++ "," ++ e ++ ")"
+
+
+-- averageFormula = undefined
+
 
