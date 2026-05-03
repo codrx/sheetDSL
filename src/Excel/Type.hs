@@ -26,7 +26,7 @@ type Column = Text
 -- newtype ClipBoard = ClipBoard { getStored :: forall a. a -> a } 
 
 data ExcelFileState = ExcelFileState
-  { _activeSheet :: (SheetName, Worksheet) -- should i wrap in newtype?
+  { _activeSheet :: Maybe (SheetName, Worksheet) -- should i wrap in newtype?
   , _cellPos     :: CellCoord
   -- , _clipboard   :: Maybe ClipBoard
   , _xlsx        :: Xlsx
@@ -35,7 +35,7 @@ data ExcelFileState = ExcelFileState
 makeLenses ''ExcelFileState
 
 instance Default ExcelFileState where
-  def = undefined
+  def = ExcelFileState Nothing (RowAbs 1, ColumnAbs 1) def 
 
 
 type NewExcelFileState  = ExcelFileState -> ExcelFileState

@@ -1,0 +1,53 @@
+
+// aligned just because
+
+ReadFrom: "test.csv"
+WriteTo:  "Book1.xlsx"
+
+Do [
+    Create NewSheet (Text="B")
+    Move   ToCell   (Row="2", Column="A")
+    Insert Value    (Text="b")
+    Move   Down
+    Insert Value    (Date="b")
+    Move   Right
+    Insert Formula  (Text="b")
+] End
+
+
+-- As observed by parser
+
+ReadFrom (File CSV "test.csv")
+WriteTo  (File CSV "test.csv")
+
+DoBlock [
+    Function (Create (NewSheet [Name "B"]))
+    Function (Move (ToCell [Row "2", Column "A"]))
+    Function (Insert (Value [Text "b"]))
+    Function (Move Down)
+    ...
+]
+
+-- eval for functional will be
+
+dispatchTable :: Ft -> FuncName -> Func
+
+
+getF :: FType -> Func
+getF (FType fn _)  = lookup $ dispatchTable_(ft) fn
+
+-- like this or somethin
+unwrapArg :: forall v. Arg -> v
+unwrapArg (A1 v) = v
+unwrapArg (A2 v) = v
+...
+...
+unwrapArg (AN v) = v
+
+-- use existential quantifiers and heterogenous lists?
+unwrapArgs :: [Arg] -> [v]
+unwrapArgs = map unwrapArg 
+
+evalFunc (Function ft) = 
+  let getFunc = getF ft
+      argxs   = 

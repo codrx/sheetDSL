@@ -5,30 +5,44 @@ module Interpreter.Eval where
 
 import Prelude hiding (FilePath)
 
-import Interpreter.Type
 
 import Data.Text (Text)
 import Control.Monad.State
 import Control.Monad.Reader
 
+-- import Interpreter.Type
+import Interpreter.Dispatch
 import Excel.Type
 
 
-type Stack = [DSLGrammar]
+-- this is disgustingly bad
+-- need to redo syntax, parser, and design flow
 
-data Env = Env
-  { readF  :: Maybe (FileType, FilePath)
-  , writeF :: (FileType, FilePath)
-  }
+-- type Stack = [DSLGrammar]
 
-data InterpreterState a = StateT ExcelFileState (IO a)
+-- data Env = Env
+--   { readF  :: Maybe (FileType, FilePath)
+--   , writeF :: Maybe (FileType, FilePath)
+--   }
+
+-- data Interpreter a = Interpreter Env (StateT ExcelFileState IO a)
+
+-- -- ReadFrom Identifier -> ReadFrom (File FileType FilePath)
+-- unwrapFile :: Identifier -> (FileType, FilePath)
+-- unwrapFile (File ft fp) = (ft, fp)
+-- -- will redo later
+-- unwrapFile _ = undefined
+
+-- eval :: DSLGrammar -> Either ExcelFileState Env
+-- eval (ReadFrom f) = Right (Env (Just (unwrapFile f)) Nothing)
+-- eval (WriteTo f) = Right (Env Nothing (Just (unwrapFile f)))
+-- eval (Function n a) = undefined
+-- eval (WithinBlock r b) = undefined
+-- eval (DoBlock b) = undefined
 
 
-eval :: Stack -> InterpreterState ()
-eval = undefined
-
--- (row, index) args will be fed using selection range
-evalWithin = undefined
+-- interpreter :: Stack -> Interpreter ()
+-- interpreter = undefined
 
 
 

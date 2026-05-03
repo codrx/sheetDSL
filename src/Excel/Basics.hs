@@ -19,6 +19,7 @@ module Excel.Basics
   ) where
 
 
+import           Data.Maybe (fromJust)
 import           Control.Lens
 import           Codec.Xlsx
 import           Excel.Type
@@ -45,7 +46,7 @@ import           Excel.Type
 -}
 
 _getAS :: ExcelFileState -> (SheetName, Worksheet)
-_getAS = flip (^.) activeSheet
+_getAS = fromJust . flip (^.) activeSheet
 
 _getWS :: ExcelFileState -> Worksheet
 _getWS = snd . _getAS
@@ -69,7 +70,7 @@ updateActiveSheet sheetName efs = do
   newWS <- efs ^? xlsx . ixSheet sheetName
   let (sn, ws)   = _getAS efs
       saveCurrWS = xlsx . ixSheet sn .~ ws
-      setNewWS   = activeSheet .~ (sheetName, newWS)
+      setNewWS   = activeSheet ?~ (sheetName, newWS)
   return $ efs & saveCurrWS & setNewWS
 
 {-
@@ -85,6 +86,7 @@ updateActiveSheet sheetName efs = do
   Moving 
 
 -}
+
 updateCellPos :: CellCoord -> NewExcelFileState
 updateCellPos c = flip (&) (cellPos .~ c)
 
@@ -114,7 +116,7 @@ unColumnCoord (ColumnAbs i) = i
 unColumnCoord (ColumnRel i) = i
 
 writeToWS :: WSContent -> NewExcelFileState
-writeToWS (WSCells f) efs = efs & activeSheet . _2 . wsCells %~ f
+writeToWS (WSCells f) efs = efs & activeSheet . _Just . _2 . wsCells %~ f
 -- not hit
 writeToWS _ _ = undefined
 
@@ -130,9 +132,10 @@ writeToCell (CCValue cv) = flip (&) (cellValue ?~ cv)
 writeToCell (CCComment cm) = flip (&) (cellComment ?~ cm)
 writeToCell (CCFormula cf) = flip (&) (cellFormula ?~ cf)
 
+
 {------------------------------------------------------------
 
-  Insertion
+  Cell Insertion
 
 -}
 

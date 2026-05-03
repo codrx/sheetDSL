@@ -4,5 +4,5 @@ WriteTo: "Book1.xlsx"
 Do [
     NewSheet (name="B")
     MoveToCell (row="2", column="A")
-    InsertValue (value=)
+    InsertValue (value="b")
 ] End

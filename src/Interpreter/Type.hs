@@ -1,68 +1,86 @@
 
+-- remove later
 {-# OPTIONS_GHC -Wno-unused-top-binds #-}
 
-module Interpreter.Type
-    ( Identifier(..)
-    , FilePath
-    , FileType(..)
-    , Argument
-    , Range(..)
-    , VarValueTy(..)
-    , DSLGrammar(..)
-    )
-    where
+{-# LANGUAGE GADTs                    #-}
+{-# LANGUAGE DataKinds                #-}
+{-# LANGUAGE TypeOperators            #-}
+{-# LANGUAGE KindSignatures           #-}
 
-import Prelude hiding (FilePath)
-import Data.Text (Text)
+module Interpreter.Type where
 
-type FilePath = Text
 
-data FileType = 
-    Excel 
-  | CSV 
-  deriving Show
+import           Prelude hiding (FilePath)
 
-data Identifier = 
-    Variable Text 
-  | FuncName Text
-  | File FileType FilePath 
-  deriving Show
+import           Data.Kind
+import           Data.Text
+import           Data.Proxy
 
-data VarValueTy = 
-    StringTy Text
-  | IntegerTy Int
-  | FractionalTy Double
-  | BooleanTy Bool
-  deriving Show
 
-type Argument = Maybe [(Identifier, VarValueTy)]
+data FileType =
+    Excel
+  | CSV
 
-data Range = 
-    Row Text
-  | Column Text
-  | Selection Range Range
-  deriving Show
 
-data DSLGrammar = 
-    ReadFrom Identifier
-  | WriteTo Identifier
-  | Function Identifier Argument
-  | WithinBlock Range (Maybe [DSLGrammar])
-  | DoBlock (Maybe [DSLGrammar])
+data VarValueType = 
+    StringType Text
+  | IntegerType Int
+  | FractionalType Double
+  | BooleanType Bool
   deriving Show
 
 
--- potential change in language structure to simplify Excel instructions
--- data BaseOp f =  
---     Move f
---   | Set f
---   | Get f
---   | Move f
---   | Apply f
---   | Add f
---   | Minus f
---   | Replace f
---   | Insert f
---   | Delete f
---   | Fill f
+data FuncType f =  
+    Move f
+  | Set f
+  -- | Get f
+  -- | Apply f
+  -- | Add f
+  -- | Minus f
+  -- | Replace f
+  | Insert f
+  -- | Delete f
+  -- | Fill f
+  deriving Show
+
+-- example -> Function (Move Insert [Text "v"])
+
+class ExeclF a
+instance ExeclF (FuncType a)
+
+class BlockF a
+instance BlockF (FuncType a)
+
+-- data Range = 
+--     Row Text
+--   | Column Text
+--   | Selection Range Range
+--   deriving Show
+
+data Tags a =
+    FileOp a
+  | Exec a
+  -- | WWithinBlock Range [FuncType a]
+  | Section [a]
+  deriving Show
+
+-- why did i do it like this? beats me...
+data Block :: Tags Type -> Type where
+  ReadFrom    :: Text -> Block ('FileOp Text)
+  WriteTo     :: Text -> Block ('FileOp Text)
+  Function    :: ExeclF f => Proxy f -> Block ('Exec f)
+  DoBlock     :: BlockF f => Proxy f -> Block ('Section t) -> Block ('Section (f ': t))
+  -- WithinBlock :: Proxy f -> Block ('WWithinBlock r t) -> Block ('WWithinBlock r (f ': t))
+
+
+instance Show (Block f) where
+  show (ReadFrom t)  = "ReadFrom" ++ " " ++ show t
+  show (WriteTo t)   = "WriteTo"  ++ " " ++ show t
+  show (Function f)  = "Function" ++ " " ++ show f
+  -- don't exactly know how to do DoBlock
+  show (DoBlock _ b) = "Do" ++ " " ++ "[" ++ " " ++ show b  ++ " " ++ "]"
+  -- show (WithinBlock f b) = undefined
+
+
+
 
