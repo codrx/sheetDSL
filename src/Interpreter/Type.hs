@@ -14,20 +14,11 @@ import           Prelude hiding (FilePath)
 
 import           Data.Kind
 import           Data.Text
-import           Data.Proxy
 
 
 data FileType =
     Excel
   | CSV
-
-
-data VarValueType = 
-    StringType Text
-  | IntegerType Int
-  | FractionalType Double
-  | BooleanType Bool
-  deriving Show
 
 
 data FuncType f =  
@@ -43,13 +34,29 @@ data FuncType f =
   -- | Fill f
   deriving Show
 
--- example -> Function (Move Insert [Text "v"])
+{--
 
-class ExeclF a
-instance ExeclF (FuncType a)
+  example -> Function (Move (Insert [TextType "v"]))
 
-class BlockF a
-instance BlockF (FuncType a)
+
+--} 
+          
+          
+
+class ExeclF f
+instance ExeclF (FuncType f)
+
+class BlockF f
+instance BlockF (FuncType f)
+
+data ArgType a = 
+    TextType a
+  | IntType a
+  | FloatType a
+  | BooleanType a
+  | DateType a
+  | PercentageType a
+  | CurrencyType a
 
 -- data Range = 
 --     Row Text
@@ -57,7 +64,7 @@ instance BlockF (FuncType a)
 --   | Selection Range Range
 --   deriving Show
 
-data Tags a =
+data Tag a =
     FileOp a
   | Exec a
   -- | WWithinBlock Range [FuncType a]
@@ -65,11 +72,11 @@ data Tags a =
   deriving Show
 
 -- why did i do it like this? beats me...
-data Block :: Tags Type -> Type where
+data Block :: Tag Type -> Type where
   ReadFrom    :: Text -> Block ('FileOp Text)
   WriteTo     :: Text -> Block ('FileOp Text)
-  Function    :: ExeclF f => Proxy f -> Block ('Exec f)
-  DoBlock     :: BlockF f => Proxy f -> Block ('Section t) -> Block ('Section (f ': t))
+  Function    :: ExeclF f => f -> Block ('Exec f)
+  DoBlock     :: BlockF f => f -> Block ('Section t) -> Block ('Section (f ': t))
   -- WithinBlock :: Proxy f -> Block ('WWithinBlock r t) -> Block ('WWithinBlock r (f ': t))
 
 

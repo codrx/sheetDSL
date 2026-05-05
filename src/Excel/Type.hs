@@ -43,7 +43,12 @@ type MNewExcelFileState = ExcelFileState -> Maybe ExcelFileState
 type ENewExcelFileState = ExcelFileState -> Either () ExcelFileState
 
 
--- need to make most of these monads later
+class MoveF f
+
+class SetF f
+
+class InsertF f
+
 
 -- mimic Worksheet record from xlsx
 -- could use GADTs
@@ -74,4 +79,3 @@ instance ValidCellValue Bool where
 
 instance ValidCellValue Text where
   toCellValue = CCValue . review _CellText
-
