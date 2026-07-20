@@ -49,11 +49,7 @@ library
 
     hs-source-dirs:         src
 
-    exposed-modules:        Interpreter.Eval
-                        ,   Interpreter.Parser
-                        ,   Interpreter.Dispatch
-                        ,   Interpreter.Type
-                        ,   Excel.Basics
+    exposed-modules:        Excel.Basics
                         ,   Excel.Accounting
                         ,   Excel.Finance
                         ,   Excel.Type
@@ -78,3 +74,18 @@ executable sheetDSL
                         ,   Excel.Type
 
 
+
+test-suite test_excel
+    type: exitcode-stdio-1.0
+
+    main-is: Test.hs
+
+    hs-source-dirs: tests
+
+    ghc-options: -Wall
+
+    other-modules:
+
+    build-depends:
+
+    default-language: Haskell2010

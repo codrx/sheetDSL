@@ -1,9 +1,11 @@
-{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE GADTs                      #-}
+{-# LANGUAGE LambdaCase                 #-}
 {-# LANGUAGE RankNTypes                 #-}
-{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE TemplateHaskell            #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE OverloadedStrings          #-}
 {-# LANGUAGE GeneralisedNewtypeDeriving #-}
-{-# LANGUAGE InstanceSigs #-}
 
 
 module Excel.Type where
@@ -12,9 +14,9 @@ import           Data.Default
 import           Data.Text (Text)
 
 import           Control.Lens
+
 import           GHC.Generics
 import           GHC.Float (int2Double)
-
 
 import           Codec.Xlsx.Types
 
@@ -25,8 +27,12 @@ type Column = Text
 
 -- newtype ClipBoard = ClipBoard { getStored :: forall a. a -> a } 
 
+
+{-
+    Do I need to create NFData instance for this
+-}
 data ExcelFileState = ExcelFileState
-  { _activeSheet :: Maybe (SheetName, Worksheet) -- should i wrap in newtype?
+  { _activeSheet :: Maybe (SheetName, Worksheet) 
   , _cellPos     :: CellCoord
   -- , _clipboard   :: Maybe ClipBoard
   , _xlsx        :: Xlsx
@@ -38,21 +44,32 @@ instance Default ExcelFileState where
   def = ExcelFileState Nothing (RowAbs 1, ColumnAbs 1) def 
 
 
-type NewExcelFileState  = ExcelFileState -> ExcelFileState
-type MNewExcelFileState = ExcelFileState -> Maybe ExcelFileState
-type ENewExcelFileState = ExcelFileState -> Either () ExcelFileState
+type NewExcelFileState = ExcelFileState -> ExcelFileState
+type ENewExcelFileState = ExcelFileState -> Either Text ExcelFileState
 
 
-class MoveF f
+data ToExec where
+  Direct  :: (ExcelFileState -> ExcelFileState) -> ToExec 
+  Checked :: (ExcelFileState -> Either Text ExcelFileState) -> ToExec 
 
-class SetF f
 
-class InsertF f
+execF :: ExcelFileState -> ToExec -> Either Text ExcelFileState
+execF x (Direct f)  = pure (f x)
+execF x (Checked f) = f x
 
+
+-- class ChainableF f where
+--   -- (-.>) :: MonadError e m => (f -> m ExcelFileState) -> (f -> m ExcelFileState) -> f -> m ExcelFileState 
+--   (-.>) :: f -> f -> f -> ExcelFileState 
+--   infixl 1 -.>
+
+
+-- instance ChainableF (ToExec f) where 
+--   (-.>) g f i  = undefined
 
 -- mimic Worksheet record from xlsx
 -- could use GADTs
-data WSContent = 
+data WSContent =
     WSColumn ([ColumnsProperties] -> [ColumnsProperties])
   | WSCells (CellMap -> CellMap)
 

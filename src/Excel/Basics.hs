@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE FlexibleContexts  #-}
 {-# LANGUAGE RankNTypes        #-}
-{-# LANGUAGE TupleSections     #-}
 
 module Excel.Basics
   ( newSheet
@@ -19,8 +19,13 @@ module Excel.Basics
   ) where
 
 
-import           Data.Maybe (fromJust)
+import           Data.Text (Text)
+
 import           Control.Lens
+import           Control.Monad
+import           Control.Monad.Except
+import           Control.Applicative
+
 import           Codec.Xlsx
 import           Excel.Type
 
@@ -36,42 +41,64 @@ import           Excel.Type
 
     write_____ -> any function that modifies records defined in Xlsx library
 
-      -> anything that changes records in lsx library will directly effect the file
+      -> anything that changes records in xlsx library will directly effect the file
 
 
   Majority of functions will overwrite existing cell contents
 
-  - may need to wrap accessors in newtype
+-}
+
+{------------------------------------------------------------
+
+  Helpers 
 
 -}
 
-_getAS :: ExcelFileState -> (SheetName, Worksheet)
-_getAS = fromJust . flip (^.) activeSheet
+-- improve error messages
 
-_getWS :: ExcelFileState -> Worksheet
-_getWS = snd . _getAS
+-- can be empty in the beginning
+_getActiveSheet :: MonadError Text m => ExcelFileState -> m (SheetName, Worksheet)
+_getActiveSheet x
+  | Just as' <- x ^. activeSheet = pure as'
+  | otherwise                    = throwError "NO SHEET SET AS ACTIVE."
+
+_getActiveWS :: MonadError Text m => ExcelFileState -> m Worksheet
+_getActiveWS = fmap snd . _getActiveSheet
 
 _getCellPos :: ExcelFileState -> CellCoord
 _getCellPos = flip (^.) cellPos
+
+_getInactiveSheet :: MonadError Text m => SheetName -> ExcelFileState -> m (SheetName, Worksheet)
+_getInactiveSheet s x
+  | Just ws' <- x ^? xlsx . ixSheet s = pure (s, ws')
+  | otherwise                         = throwError "SHEET NOT FOUND."
+
+_getInactiveWS :: MonadError Text m => SheetName -> ExcelFileState -> m Worksheet
+_getInactiveWS s = fmap snd . _getInactiveSheet s
+
+{------------------------------------------------------------
+
+  Something 
+
+-}
 
 copy = undefined
 
 paste = undefined
 
 newSheet :: SheetName -> NewExcelFileState 
-newSheet sheetName = xlsx . atSheet sheetName ?~ def
+newSheet s = xlsx . atSheet s ?~ def
 
-setActiveSheet :: SheetName -> MNewExcelFileState
-setActiveSheet = updateActiveSheet
+setActiveSheet :: SheetName -> ENewExcelFileState
+setActiveSheet s x = do
+  a <- _getActiveSheet x
+  i <- _getInactiveSheet s x
+  return $ update a i x
 
--- improve | looks ugly
-updateActiveSheet :: SheetName -> MNewExcelFileState
-updateActiveSheet sheetName efs = do 
-  newWS <- efs ^? xlsx . ixSheet sheetName
-  let (sn, ws)   = _getAS efs
-      saveCurrWS = xlsx . ixSheet sn .~ ws
-      setNewWS   = activeSheet ?~ (sheetName, newWS)
-  return $ efs & saveCurrWS & setNewWS
+    where update (as, aw) (is, iw) x' = x' & save & setA
+
+            where save = xlsx . ixSheet as .~ aw
+                  setA = activeSheet ?~ (is, iw)
 
 {-
 
@@ -88,14 +115,19 @@ updateActiveSheet sheetName efs = do
 -}
 
 updateCellPos :: CellCoord -> NewExcelFileState
-updateCellPos c = flip (&) (cellPos .~ c)
+updateCellPos = (.~) cellPos
 
 -- moveToCell (row = 3, coloumn = B)
 moveToCell :: Row -> Column -> NewExcelFileState
-moveToCell r c efs = 
+moveToCell r c x = 
   let r' = row2coord r
       c' = col2coord c 
-    in updateCellPos (r', c') efs
+    in updateCellPos (r', c') x
+
+
+
+moveUp :: NewExcelFileState
+moveUp = undefined
 
 {------------------------------------------------------------
 
@@ -104,33 +136,35 @@ moveToCell r c efs =
 -}
 
 -- Taken from: Codec.Xlsx.Types.Common
--- | Unwrap a Coord into an abstract Int coordinate
-unRowCoord :: RowCoord -> RowIndex
-unRowCoord (RowAbs i) = i
-unRowCoord (RowRel i) = i
+-- Unwrap a Coord into an abstract Int coordinate
+_unRowCoord :: RowCoord -> RowIndex
+_unRowCoord (RowAbs i) = i
+_unRowCoord (RowRel i) = i
 
 -- Taken from: Codec.Xlsx.Types.Common
--- | Unwrap a Coord into an abstract Int coordinate
-unColumnCoord :: ColumnCoord -> ColumnIndex
-unColumnCoord (ColumnAbs i) = i
-unColumnCoord (ColumnRel i) = i
+-- Unwrap a Coord into an abstract Int coordinate
+_unColumnCoord :: ColumnCoord -> ColumnIndex
+_unColumnCoord (ColumnAbs i) = i
+_unColumnCoord (ColumnRel i) = i
 
+-- !TODO: define Prism to handle Nothing case - _Just skips nothing
 writeToWS :: WSContent -> NewExcelFileState
-writeToWS (WSCells f) efs = efs & activeSheet . _Just . _2 . wsCells %~ f
--- not hit
+writeToWS (WSCells f) x = x & activeSheet . _Just . _2 . wsCells %~ f
+-- !TODO: Other value is WSColumn - idk rn what to do with it or why it's there
+-- should not be hit -- change 
 writeToWS _ _ = undefined
 
-writeCellToWS ::(CellCoord, Cell) -> NewExcelFileState
-writeCellToWS (cc, c) efs = 
-  let coordAsIndex = bimap unRowCoord unColumnCoord cc
-    in writeToWS (WSCells (at coordAsIndex ?~ c)) efs
+writeCellToWS :: (CellCoord, Cell) -> NewExcelFileState
+writeCellToWS (cc, c) x = 
+  let coordAsIndex = bimap _unRowCoord _unColumnCoord cc
+    in writeToWS (WSCells (at coordAsIndex ?~ c)) x
 
 -- write to Cell record in xlsx
 writeToCell :: CellContent -> Cell -> Cell
-writeToCell (CCStyle cs) = flip (&) (cellStyle ?~ cs)
-writeToCell (CCValue cv) = flip (&) (cellValue ?~ cv)
-writeToCell (CCComment cm) = flip (&) (cellComment ?~ cm)
-writeToCell (CCFormula cf) = flip (&) (cellFormula ?~ cf)
+writeToCell (CCStyle cs) = (?~) cellStyle cs
+writeToCell (CCValue cv) = (?~) cellValue cv
+writeToCell (CCComment cm) = (?~) cellComment cm
+writeToCell (CCFormula cf) = (?~) cellFormula cf
 
 
 {------------------------------------------------------------
@@ -139,20 +173,20 @@ writeToCell (CCFormula cf) = flip (&) (cellFormula ?~ cf)
 
 -}
 
-insertFormula :: a -> ENewExcelFileState
+insertFormula :: a -> NewExcelFileState
 insertFormula = undefined
 
 -- not related to xlsx CellRef
-insertCellRef :: a -> ENewExcelFileState
+insertCellRef :: a -> NewExcelFileState
 insertCellRef = undefined
 
 insertCellValue :: ValidCellValue a => a -> NewExcelFileState
-insertCellValue v efs = 
+insertCellValue v x = 
   let tc = toCellValue v
-      -- using def for Cell for now
+      -- !TODO: using def for Cell for now
       wc = writeToCell tc def
-      cc = _getCellPos efs
-    in writeCellToWS (cc, wc) efs
+      cc = _getCellPos x
+    in writeCellToWS (cc, wc) x
 
 insertValue :: ValidCellValue a => a -> NewExcelFileState
 insertValue = insertCellValue
